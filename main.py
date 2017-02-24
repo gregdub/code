@@ -31,6 +31,18 @@ class MainFrame(wx.Frame):
         wx.Frame.__init__(self, None, -1, title='Liaison série RS232'
                           , style = wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX, size = (800, 400))
 
+        # Evenement lors de la fermeture de la fenêtre :
+        self.Bind(wx.EVT_CLOSE, self.OnFerme)
+
+    def OnFerme(self, event):
+        """ Lors de la fermeture de la fenêtre """
+        dialogue = wx.MessageDialog(self, "Souhaitez vous vraiment quitter cette application ?"
+                                    ,"Quitter l'application", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+        result = dialogue.ShowModal()
+        dialogue.Destroy()
+        if result == wx.ID_OK:
+            self.Destroy()
+
 if __name__ == '__main__':
     APP = wx.App(redirect=True)
     FRAME = MainFrame()
