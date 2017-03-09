@@ -19,45 +19,47 @@
 ################################################################################
 """
 
-# Initialisation du registre
-REGISTRE=[0,0,0]
+class CodeConvolutif(object):
+    """Classe rassemblant toutes les fonctions nécessaires au codage convolutif
+    """
+    def __init__(self):
+        self.registre = [0, 0, 0]
 
-# Code envoyé
-CODE = "1001"
+    def combinaison(self):
+        """ Fonction de combinaison """
+        # Premier polynome générateur
+        polynome_1 = self.registre[0] ^ self.registre[1] ^ self.registre[2]
+        # Second polynome générateur
+        polynome_2 = self.registre[0] ^ self.registre[2]
 
-# Chaine de caractère de retour
-RETOUR = ""
+        # Envoi de la chaine codé
+        return str(polynome_1) + str(polynome_2)
 
-def codeConvolutif():
-    """ Fonction de génération """
-    # Premier polynome générateur
-    c1 = REGISTRE[0] ^ REGISTRE[1] ^ REGISTRE[2]
-    # Second polynome générateur
-    c2 = REGISTRE[0] ^ REGISTRE[2]
+    def decalage(self, code):
+        """ Fonction de décalage du registre """
+        #Ajout de la nouvelle valeur
+        self.registre.append(code)
 
-    # Envoi de la chaine codé
-    return str(c1) + str(c2)
+        # Décalage du registre
+        self.registre[0] = self.registre[1]
+        self.registre[1] = self.registre[2]
+        self.registre[2] = self.registre[3]
 
-def decalage(x):
-    """ Fonction de décalage du registre """
-    #Ajout de la nouvelle valeur
-    REGISTRE.append(x)
+        # Suppresion de la valeur
+        del self.registre[3]
 
-    # Décalage du registre
-    REGISTRE[0]=REGISTRE[1]
-    REGISTRE[1]=REGISTRE[2]
-    REGISTRE[2]=REGISTRE[3]
+        return self.registre
 
-    # Suppresion de la valeur
-    del REGISTRE[3]
+    def codage(self, code):
+        """ Fonction de codage """
+        #Ajout de la réinitialisation au code
+        code = code + "00"
 
-# Rajout de deux bits à zéro pour le réinitialisation
-CODE = CODE + "00"
+        #Variable codé avec le code code convolutif
+        retour = ""
 
-# Parcours du Code
-for bit in CODE:
-    decalage(int(bit))
-    RETOUR = RETOUR + str(codeConvolutif())
+        for bit in code:
+            self.decalage(int(bit))
+            retour = retour + self.combinaison()
 
-# Affichage du retour
-print RETOUR
+        return retour
