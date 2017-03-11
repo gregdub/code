@@ -21,6 +21,12 @@
 
 # Module python :
 import wx # Module pour l'affichage de la fenètre
+#import codage # Module pour l'encodage des bits
+#import time
+import serial
+import serial.tools.list_ports
+
+
 
 class MainFrame(wx.Frame):
     """Class de la fenêtre principal"""
@@ -41,6 +47,9 @@ class MainFrame(wx.Frame):
         
         wx.StaticBox(self.panel,1," Configuration du port d'emission: ",(10,10),size=(300,100))
 
+        """ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            print(p)"""
         # Modification du port :
         wx.StaticText(self.panel,-1,"Port :",(20,30))
         ListPort = ['COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
@@ -53,8 +62,28 @@ class MainFrame(wx.Frame):
 
         # Boutton de test de la communication serie
         BoutonTest=wx.Button(self.panel,label="Test COM",pos=(200,30),size=(80,30))
+        BoutonTest.SetBackgroundColour(wx.RED)
         self.Bind(wx.EVT_BUTTON, self.TestCom, BoutonTest)
 
+##        ser = serial.Serial()
+##        ser.baudrate = 19200
+##        ser.port = 'COM1'
+##        ser
+##        Serial<id=0xa81c10, open=False>(port='COM1', baudrate=19200, bytesize=8, parity='N', stopbits=1, timeout=None, xonxoff=0, rtscts=0)
+##        ser.open()
+##        ser.is_open
+
+        
+
+        # configure the serial connections (the parameters differs on the device you are connecting to)
+        """        ser = serial.Serial(
+        port='COM1',
+        baudrate=9600,
+        parity=serial.PARITY_EVEN,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS
+        )
+        ser.isOpen()"""
      
     # ***** PARTIE RECEPTION *****
           
@@ -96,10 +125,10 @@ class MainFrame(wx.Frame):
         #vbox.Add((-1, 10))
 
         hbox10 = wx.BoxSizer(wx.HORIZONTAL)
-        self.t20 = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
-        hbox10.Add(self.t20,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        self.saisie = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        hbox10.Add(self.saisie,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox10) 
-        self.t20.Bind(wx.EVT_TEXT_ENTER,self.SaisieModification)
+        self.saisie.Bind(wx.EVT_TEXT_ENTER,self.SaisiePhrase)
 
 
         
@@ -114,10 +143,10 @@ class MainFrame(wx.Frame):
         #vbox.Add((-1, 10))
 
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        self.t2 = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
-        hbox3.Add(self.t2,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        self.saisieModif = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        hbox3.Add(self.saisieModif,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox3) 
-        self.t2.Bind(wx.EVT_TEXT_ENTER,self.SaisieModification)
+        self.saisieModif.Bind(wx.EVT_TEXT_ENTER,self.SaisieModification)
 
         #vbox.Add((-1, 25))
     
@@ -149,7 +178,25 @@ class MainFrame(wx.Frame):
         self.Close(True)
 
     def SaisiePhrase(self,event): 
-        print "Enter pressed"
+        #print "Enter pressed"
+        # conversion de la phrase en binaire et envoi à codage (variable code) par morceaux de 4 bits
+        #print(bin(reduce(lambda x, y: 256*x+y, (ord(c) for c in self.saisie), 0)))
+        #self.saisieModif.SetLabel(SaisieConvBin)
+        #self.saisieModif.SetLabel(SaisieConvBin.GetValue())
+        
+        a = wx.App(redirect=False)
+        my_str = wx.GetTextFromUser("Enter A Number!")
+        base = {'x':16,'b':2,'o':8}.get(my_str[1].lower(),10)
+        int_val = int(my_str,base)
+        hex_str = hex(int_val)   
+        bin_str = bin(int_val)
+
+        msg = """
+        User Entered:%s
+        Int:%s
+        Hex:%s
+        Bin:%s"""%(my_str,int_val,hex_str,bin_str)
+        wx.MessageBox(msg)
 
     # ***** Fonction ENVOI DU CODE *****
     # par appui sur Enter ou bouton
