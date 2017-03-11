@@ -63,3 +63,10 @@ class CodeConvolutif(object):
             retour = retour + self.combinaison()
 
         return retour
+
+""" TEST """
+"""
+code1 = "1001"
+c = CodeConvolutif()
+print c.codage(code1)
+"""
