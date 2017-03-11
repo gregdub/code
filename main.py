@@ -47,43 +47,36 @@ class MainFrame(wx.Frame):
         
         wx.StaticBox(self.panel,1," Configuration du port d'emission: ",(10,10),size=(300,100))
 
-        """ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p)"""
+        #ListPort = list(serial.tools.list_ports.comports())
+        #for p in ListPort:
+            #print(p)
+            #ListPort = [p] ???
         # Modification du port :
         wx.StaticText(self.panel,-1,"Port :",(20,30))
-        ListPort = ['COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
-        wx.ComboBox(self.panel,-1,choices=ListPort,size=(80,26),pos=(100,30))
-
+        ListPort = ['COMx','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
+        self.combo1=wx.ComboBox(self.panel,-1,value=ListPort[0],choices=ListPort,size=(80,26),pos=(100,30))
+        
+        
         # Vitesse de transmission
         wx.StaticText(self.panel,-1,"Vitesse :",(20,50))
         ListVitesse = ['2400','4800','9600','19200','38400','56000','64000']
-        wx.ComboBox(self.panel,-1,choices=ListVitesse,size=(80,26),pos=(100,50))
+        self.combo2=wx.ComboBox(self.panel,-1,value=ListVitesse[6],choices=ListVitesse,size=(80,26),pos=(100,50))
 
         # Boutton de test de la communication serie
-        BoutonTest=wx.Button(self.panel,label="Test COM",pos=(200,30),size=(80,30))
-        BoutonTest.SetBackgroundColour(wx.RED)
-        self.Bind(wx.EVT_BUTTON, self.TestCom, BoutonTest)
+        self.BoutonTest=wx.Button(self.panel,label="Test COM",pos=(200,30),size=(80,30))
+        self.BoutonTest.SetBackgroundColour(wx.RED)
+        self.Bind(wx.EVT_BUTTON, self.TestCom, self.BoutonTest)
 
-##        ser = serial.Serial()
-##        ser.baudrate = 19200
-##        ser.port = 'COM1'
-##        ser
-##        Serial<id=0xa81c10, open=False>(port='COM1', baudrate=19200, bytesize=8, parity='N', stopbits=1, timeout=None, xonxoff=0, rtscts=0)
-##        ser.open()
-##        ser.is_open
-
-        
-
-        # configure the serial connections (the parameters differs on the device you are connecting to)
-        """        ser = serial.Serial(
-        port='COM1',
-        baudrate=9600,
-        parity=serial.PARITY_EVEN,
-        stopbits=serial.STOPBITS_ONE,
-        bytesize=serial.EIGHTBITS
-        )
-        ser.isOpen()"""
+        # configure the serial connections
+        if self.combo1.GetValue() != 'COMx':
+            ser = serial.Serial(
+            port=self.combo1.GetValue(),
+            baudrate=self.combo2.GetValue(),
+            parity=serial.PARITY_EVEN,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS
+            )
+            ser.isOpen()
      
     # ***** PARTIE RECEPTION *****
           
@@ -91,14 +84,23 @@ class MainFrame(wx.Frame):
 
         # Modification du port :
         wx.StaticText(self.panel,-1,"Port :",(370,30))
-        ListPort2 = ['COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
-        wx.ComboBox(self.panel,-1,choices=ListPort2,size=(80,26),pos=(450,30))
+        ListPort2 = ['COMx','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
+        self.combo3=wx.ComboBox(self.panel,-1,value=ListPort2[0],choices=ListPort2,size=(80,26),pos=(450,30))
 
         # Vitesse de transmission
         wx.StaticText(self.panel,-1,"Vitesse :",(370,50))
         ListVitesse2 = ['2400','4800','9600','19200','38400','56000','64000']
-        wx.ComboBox(self.panel,-1,choices=ListVitesse2,size=(80,26),pos=(450,50))
+        self.combo4=wx.ComboBox(self.panel,-1,value=ListVitesse2[6],choices=ListVitesse2,size=(80,26),pos=(450,50))
 
+        """if self.combo3.GetValue() != 'COMx':
+            ser = serial.Serial(
+            port=self.combo3.GetValue(),
+            baudrate=self.combo4.GetValue(),
+            parity=serial.PARITY_EVEN,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS
+            )
+            ser.isOpen()"""
 
     # ***** PARTIE SAISIE TEXTE *****
 
@@ -107,15 +109,6 @@ class MainFrame(wx.Frame):
 
         #vbox.Add((-10, 10))
         vbox.AddSpacer(120)
-        
-        """l1 = wx.StaticText(self.panel, -1, "Saisie de la phrase :") 
-		
-        hbox1.Add(l1, 1, wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
-        self.t1 = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE) 
-		
-        hbox1.Add(self.t1,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
-        self.t1.Bind(wx.EVT_TEXT_ENTER,self.SaisiePhrase) 
-        vbox.Add(hbox1)"""
 
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
         st1 = wx.StaticText(self.panel, label='Saisie de la phrase :')
@@ -174,8 +167,19 @@ class MainFrame(wx.Frame):
         BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(700,500),size=(80,30))
         self.Bind(wx.EVT_BUTTON, self.Transmit, BoutonTransmit)
 
+    # ***** FONCTIONS *****
+    
     def TestCom(self,event):
-        self.Close(True)
+        #self.Close(True)
+        ser = serial.Serial('COM3', 19200, timeout=1)
+        chaine="test"
+        envoi=ser.write(chaine)    # Envoi de la chaine de caracteres
+        lecture=ser.readline()    # Lecture du port jusqu'au \n (retour ligne)
+        if (chaine==lecture):
+            #print(out)
+            self.BoutonTest.SetBackgroundColour(wx.GREEN)
+        else:
+            self.BoutonTest.SetBackgroundColour(wx.RED)
 
     def SaisiePhrase(self,event): 
         #print "Enter pressed"
@@ -183,6 +187,8 @@ class MainFrame(wx.Frame):
         #print(bin(reduce(lambda x, y: 256*x+y, (ord(c) for c in self.saisie), 0)))
         #self.saisieModif.SetLabel(SaisieConvBin)
         #self.saisieModif.SetLabel(SaisieConvBin.GetValue())
+
+        #ser.write(bytes(b'your_commands'))
         
         a = wx.App(redirect=False)
         my_str = wx.GetTextFromUser("Enter A Number!")
