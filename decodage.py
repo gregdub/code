@@ -352,7 +352,6 @@ class DecodeConvolutif(object):
         # Supprimer de toute la list les code qui ne finisent pas par "00"
         for i in range(4):
             code = list_temp[i].get_code()
-            print code
             code = code[-2:]
             if code == "00":
                 list_resultats.append(list_temp[i])
@@ -363,16 +362,18 @@ class DecodeConvolutif(object):
         if len(list_resultats) == 1:
             lecode = list_resultats[0].get_code()
             lecode = lecode[:-2]
-            print "Le résultat est : " + lecode
+            return lecode
         else:
             pass
+
 
     def decodage(self, str_code):
         """ Fonction principal de décodage """
 
         self.decoupage(str_code)
         self.treillis()
-        self.comparaison()
+        retour = self.comparaison()
+        return retour
 
 def distance_hamming(str_code_a, str_code_b):
     """ Fonction qui calcul la distance de Hamming entre deux codes """
@@ -397,10 +398,3 @@ def distance_hamming(str_code_a, str_code_b):
 
     # On retourne le résultat
     return cpt
-
-""" TEST """
-"""
-CODE = "110111111011"
-dec=DecodeConvolutif()
-dec.decodage(CODE)
-"""

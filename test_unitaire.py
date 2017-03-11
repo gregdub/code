@@ -18,3 +18,26 @@
 ###
 ################################################################################
 """
+
+import unittest
+import codage
+import decodage
+
+class TestClassCodage(unittest.TestCase):
+
+    def test_codage(self):
+        code = "1001"
+        lecodage = codage.CodeConvolutif().codage(code)
+        self.assertEqual(lecodage, "111011111011")
+
+class TestClassDeCodage(unittest.TestCase):
+
+    def test_decodage(self):
+        code = "111011111011"
+        ledecodage = decodage.DecodeConvolutif().decodage(code)
+        self.assertEqual(ledecodage, "1001")
+
+# Ceci lance le test si on exécute le script
+# directement.
+if __name__ == '__main__':
+    unittest.main()
