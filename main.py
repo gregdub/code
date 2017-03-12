@@ -25,6 +25,7 @@ import wx # Module pour l'affichage de la fenètre
 #import time
 import serial
 import serial.tools.list_ports
+from serial import SerialException
 
 
 
@@ -158,59 +159,73 @@ class MainFrame(wx.Frame):
         hbox5.Add(self.t3,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox5) 
 
-
         # a mettre pour la répartition des zones de texte sur l'ecran
         self.panel.SetSizer(vbox)
-
 
         # Boutton pour la transmission
         BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(700,500),size=(80,30))
         self.Bind(wx.EVT_BUTTON, self.Transmit, BoutonTransmit)
 
+
     # ***** FONCTIONS *****
     
     def TestCom(self,event):
         #self.Close(True)
-        ser = serial.Serial('COM3', 19200, timeout=1)
+        #ser = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        try:
+            ser = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        except SerialException:
+            self.BoutonTest.SetBackgroundColour(wx.RED)
+            msg = """ port COM inexistant """
+            wx.MessageBox(msg)
+            return None
         chaine="test"
-        envoi=ser.write(chaine)    # Envoi de la chaine de caracteres
-        lecture=ser.readline()    # Lecture du port jusqu'au \n (retour ligne)
+        envoi=ser.write(chaine)     # Envoi de la chaine de caracteres
+        lecture=ser.readline()      # Lecture du port jusqu'au \n (retour ligne)
         if (chaine==lecture):
-            #print(out)
             self.BoutonTest.SetBackgroundColour(wx.GREEN)
         else:
             self.BoutonTest.SetBackgroundColour(wx.RED)
 
     def SaisiePhrase(self,event): 
-        #print "Enter pressed"
-        # conversion de la phrase en binaire et envoi à codage (variable code) par morceaux de 4 bits
+        
+        # conversion de la phrase en binaire :
+
+        #ListCar = list self.saisie
+        #for EachCar in self.saisie.Get:
+        #    print(EachCar)
+            
+        #et envoi à codage (variable code) par morceaux de 4 bits :
+        
         #print(bin(reduce(lambda x, y: 256*x+y, (ord(c) for c in self.saisie), 0)))
         #self.saisieModif.SetLabel(SaisieConvBin)
         #self.saisieModif.SetLabel(SaisieConvBin.GetValue())
 
-        #ser.write(bytes(b'your_commands'))
+        
         
         a = wx.App(redirect=False)
-        my_str = wx.GetTextFromUser("Enter A Number!")
-        base = {'x':16,'b':2,'o':8}.get(my_str[1].lower(),10)
-        int_val = int(my_str,base)
-        hex_str = hex(int_val)   
-        bin_str = bin(int_val)
-
-        msg = """
-        User Entered:%s
-        Int:%s
-        Hex:%s
-        Bin:%s"""%(my_str,int_val,hex_str,bin_str)
-        wx.MessageBox(msg)
+##        my_str = wx.GetTextFromUser("Enter A Number!")
+##        base = {'x':16,'b':2,'o':8}.get(my_str[1].lower(),10)
+##        int_val = int(my_str,base)
+##        hex_str = hex(int_val)   
+##        bin_str = bin(int_val)
+##
+##        msg = """
+##        User Entered:%s
+##        Int:%s
+##        Hex:%s
+##        Bin:%s"""%(my_str,int_val,hex_str,bin_str)
+##        wx.MessageBox(msg)
 
     # ***** Fonction ENVOI DU CODE *****
     # par appui sur Enter ou bouton
     def SaisieModification(self,event): 
         print "Enter pressed"
+        #ser.write(bytes(b'your_commands'))
 
     def Transmit(self,event): 
         print "Enter pressed"
+        #ser.write(bytes(b'your_commands'))
 
         
 """
