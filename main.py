@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+# -*- coding:  mbcs -*-
 
 """
 ################################################################################
@@ -21,13 +21,11 @@
 
 # Module python :
 import wx # Module pour l'affichage de la fenètre
-#import codage # Module pour l'encodage des bits
-#import time
+import codage # Module pour l'encodage des bits
+import decodage # Module pour le decodage des bits
 import serial
 import serial.tools.list_ports
 from serial import SerialException
-
-
 
 class MainFrame(wx.Frame):
     """Class de la fenêtre principal"""
@@ -112,14 +110,14 @@ class MainFrame(wx.Frame):
         vbox.AddSpacer(120)
 
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        st1 = wx.StaticText(self.panel, label='Saisie de la phrase :')
+        st1 = wx.StaticText(self.panel, label=' Saisie de la phrase :')
         hbox1.Add(st1)
         vbox.Add(hbox1, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox10 = wx.BoxSizer(wx.HORIZONTAL)
-        self.saisie = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        self.saisie = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
         hbox10.Add(self.saisie,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox10) 
         self.saisie.Bind(wx.EVT_TEXT_ENTER,self.SaisiePhrase)
@@ -130,41 +128,57 @@ class MainFrame(wx.Frame):
     # ***** PARTIE MODIFICATION DU TEXTE *****
 
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        st2 = wx.StaticText(self.panel, label='Code a envoyer :')
+        st2 = wx.StaticText(self.panel, label=' Code a envoyer :')
         hbox2.Add(st2)
         vbox.Add(hbox2, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        self.saisieModif = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        self.saisieModif = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
         hbox3.Add(self.saisieModif,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox3) 
         self.saisieModif.Bind(wx.EVT_TEXT_ENTER,self.SaisieModification)
 
-        #vbox.Add((-1, 25))
+        vbox.Add((-1, 50))
     
     
     # ***** RECEPTION DU CODE *****
 
         hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-        st3 = wx.StaticText(self.panel, label='Code recu :')
+        st3 = wx.StaticText(self.panel, label=' Code recu decode :')
         hbox4.Add(st3)
         vbox.Add(hbox4, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        self.t3 = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
-        hbox5.Add(self.t3,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
-        vbox.Add(hbox5) 
+        self.coderecu = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
+        hbox5.Add(self.coderecu,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        vbox.Add(hbox5)
+
+        hbox6 = wx.BoxSizer(wx.HORIZONTAL)
+        st4 = wx.StaticText(self.panel, label=' Retranscription de la phrase :')
+        hbox6.Add(st4)
+        vbox.Add(hbox6, flag=wx.LEFT | wx.TOP)
+
+        #vbox.Add((-1, 10))
+
+        hbox7 = wx.BoxSizer(wx.HORIZONTAL)
+        self.phrasedecode = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
+        hbox7.Add(self.phrasedecode,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        vbox.Add(hbox7) 
 
         # a mettre pour la répartition des zones de texte sur l'ecran
         self.panel.SetSizer(vbox)
 
         # Boutton pour la transmission
-        BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(700,500),size=(80,30))
+        BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(650,235),size=(80,30))
         self.Bind(wx.EVT_BUTTON, self.Transmit, BoutonTransmit)
+
+        # Boutton pour tout effacer
+        BoutonClear=wx.Button(self.panel,label="Clear all",pos=(650,400),size=(80,30))
+        self.Bind(wx.EVT_BUTTON, self.Clear, BoutonClear)
 
 
     # ***** FONCTIONS *****
@@ -188,44 +202,45 @@ class MainFrame(wx.Frame):
             self.BoutonTest.SetBackgroundColour(wx.RED)
 
     def SaisiePhrase(self,event): 
-        
+        self.saisieModif.SetLabel('')
         # conversion de la phrase en binaire :
+        codepage1252 = self.saisie.GetValue().encode('cp1252')
+        #print(codepage1252)
+        hexstring =codepage1252.encode('hex')
+        #print(hexstring)
+        binary = bin(int('1'+hexstring, 16))[3:]
+        #print(binary)
+        
+        #envoi à la fonction codage:
+        motcode = codage.CodeConvolutif().codage(binary)
 
-        #ListCar = list self.saisie
-        #for EachCar in self.saisie.Get:
-        #    print(EachCar)
-            
-        #et envoi à codage (variable code) par morceaux de 4 bits :
+        #affichage de la phrase codee
+        self.saisieModif.SetLabel(motcode)
         
-        #print(bin(reduce(lambda x, y: 256*x+y, (ord(c) for c in self.saisie), 0)))
-        #self.saisieModif.SetLabel(SaisieConvBin)
-        #self.saisieModif.SetLabel(SaisieConvBin.GetValue())
 
-        
-        
-        a = wx.App(redirect=False)
-##        my_str = wx.GetTextFromUser("Enter A Number!")
-##        base = {'x':16,'b':2,'o':8}.get(my_str[1].lower(),10)
-##        int_val = int(my_str,base)
-##        hex_str = hex(int_val)   
-##        bin_str = bin(int_val)
-##
-##        msg = """
-##        User Entered:%s
-##        Int:%s
-##        Hex:%s
-##        Bin:%s"""%(my_str,int_val,hex_str,bin_str)
-##        wx.MessageBox(msg)
 
     # ***** Fonction ENVOI DU CODE *****
     # par appui sur Enter ou bouton
     def SaisieModification(self,event): 
-        print "Enter pressed"
-        #ser.write(bytes(b'your_commands'))
+        self.coderecu.SetLabel('')
+        motdecode = decodage.DecodeConvolutif().decodage(self.saisieModif.GetValue())
+        self.coderecu.SetLabel(motdecode)
+
+        #décodage coderecu en phrase
+        #mystring = self.coderecu.GetValue().decode('cp1252')
+        #self.phrasedecode.SetLabel(mystring)
+        mystring = self.coderecu.GetValue().decode('cp1252')
+        self.phrasedecode.SetLabel(mystring)
 
     def Transmit(self,event): 
-        print "Enter pressed"
-        #ser.write(bytes(b'your_commands'))
+        #execute la meme fonction que SaisieModification
+        self.SaisieModification(event)
+
+    def Clear(self,event):
+        self.saisie.SetLabel('')
+        self.saisieModif.SetLabel('')
+        self.coderecu.SetLabel('')
+        self.phrasedecode.SetLabel('')  
 
         
 """
