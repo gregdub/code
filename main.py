@@ -26,6 +26,7 @@ import decodage # Module pour le decodage des bits
 import serial
 import serial.tools.list_ports
 from serial import SerialException
+import time
 
 class MainFrame(wx.Frame):
     """Class de la fenêtre principal"""
@@ -43,6 +44,8 @@ class MainFrame(wx.Frame):
 
         font = wx.SystemSettings_GetFont(wx.SYS_SYSTEM_FONT)
         font.SetPointSize(10)
+
+        wx.StaticText(self.panel,-1," Transmission série avec correction de 2 erreurs/octet - Copyright Blochet Bastien et Dubois Grégoire",(1,550))
         
         wx.StaticBox(self.panel,1," Configuration du port d'emission: ",(10,10),size=(300,100))
 
@@ -66,16 +69,16 @@ class MainFrame(wx.Frame):
         self.BoutonTest.SetBackgroundColour(wx.RED)
         self.Bind(wx.EVT_BUTTON, self.TestCom, self.BoutonTest)
 
-        # configure the serial connections
+        # configure the transmission serial connection
         if self.combo1.GetValue() != 'COMx':
-            ser = serial.Serial(
+            serTrans = serial.Serial(
             port=self.combo1.GetValue(),
             baudrate=self.combo2.GetValue(),
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS
             )
-            ser.isOpen()
+            serTrans.isOpen()
      
     # ***** PARTIE RECEPTION *****
           
@@ -86,20 +89,21 @@ class MainFrame(wx.Frame):
         ListPort2 = ['COMx','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
         self.combo3=wx.ComboBox(self.panel,-1,value=ListPort2[0],choices=ListPort2,size=(80,26),pos=(450,30))
 
-        # Vitesse de transmission
+        # Vitesse de reception
         wx.StaticText(self.panel,-1,"Vitesse :",(370,50))
         ListVitesse2 = ['2400','4800','9600','19200','38400','56000','64000']
         self.combo4=wx.ComboBox(self.panel,-1,value=ListVitesse2[6],choices=ListVitesse2,size=(80,26),pos=(450,50))
 
-        """if self.combo3.GetValue() != 'COMx':
-            ser = serial.Serial(
-            port=self.combo3.GetValue(),
-            baudrate=self.combo4.GetValue(),
-            parity=serial.PARITY_EVEN,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS
-            )
-            ser.isOpen()"""
+##        if self.combo3.GetValue() != 'COMx':
+##            if self.combo3.GetValue() != self.combo1.GetValue():
+##                serRecep = serial.Serial(
+##                port=self.combo3.GetValue(),
+##                baudrate=self.combo4.GetValue(),
+##                parity=serial.PARITY_EVEN,
+##                stopbits=serial.STOPBITS_ONE,
+##                bytesize=serial.EIGHTBITS
+##                )
+##                serRecep.isOpen()
 
     # ***** PARTIE SAISIE TEXTE *****
 
@@ -211,7 +215,7 @@ class MainFrame(wx.Frame):
         binary = bin(int('1'+hexstring, 16))[3:]
         #print(binary)
         
-        #envoi à la fonction codage:
+        #fonction codage:
         motcode = codage.CodeConvolutif().codage(binary)
 
         #affichage de la phrase codee
@@ -223,14 +227,29 @@ class MainFrame(wx.Frame):
     # par appui sur Enter ou bouton
     def SaisieModification(self,event): 
         self.coderecu.SetLabel('')
-        motdecode = decodage.DecodeConvolutif().decodage(self.saisieModif.GetValue())
+        start_time = time.time()
+        #envoi sur la liaison serie
+        serTrans = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        envoicode=serTrans.write(bytes(self.saisieModif.GetValue()))
+        
+        #reception sur la liaison serie
+        if self.combo3.GetValue() != 'COMx':
+            serRecep = serial.Serial(self.combo3.GetValue(), self.combo4.GetValue(), timeout=1)
+            lecturecode=serRecep.readline()
+        else:
+            lecturecode=serTrans.readline()
+
+        #fonction decodage
+        motdecode = decodage.DecodeConvolutif().decodage(lecturecode)
+            
         self.coderecu.SetLabel(motdecode)
 
         #décodage coderecu en phrase
-        #mystring = self.coderecu.GetValue().decode('cp1252')
-        #self.phrasedecode.SetLabel(mystring)
         mystring = self.coderecu.GetValue().decode('cp1252')
         self.phrasedecode.SetLabel(mystring)
+
+        wx.StaticText(self.panel,-1," Executed in : %s second(s)" % (time.time() - start_time),(1,530))
+        
 
     def Transmit(self,event): 
         #execute la meme fonction que SaisieModification
@@ -242,7 +261,8 @@ class MainFrame(wx.Frame):
         self.coderecu.SetLabel('')
         self.phrasedecode.SetLabel('')  
 
-        
+
+
 """
     def OnFerme(self, event):
         Lors de la fermeture de la fenêtre
