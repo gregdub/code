@@ -27,26 +27,21 @@ class CodeConvolutif(object):
 
     def combinaison(self):
         """ Fonction de combinaison """
-        # Premier polynome générateur
-        polynome_1 = self.registre[0] ^ self.registre[1] ^ self.registre[2]
-        # Second polynome générateur
-        polynome_2 = self.registre[0] ^ self.registre[2]
+        polynome_0 = self.registre[1] ^ self.registre[2]
+        polynome_1 = self.registre[0] ^ self.registre[2]
+        polynome_2 = self.registre[0] ^ self.registre[1]
+        polynome_3 = self.registre[0] ^ self.registre[1] ^ self.registre[2]
 
         # Envoi de la chaine codé
-        return str(polynome_1) + str(polynome_2)
+        return str(polynome_0) + str(polynome_1) + str(polynome_2) + str(polynome_3)
 
     def decalage(self, code):
         """ Fonction de décalage du registre """
-        #Ajout de la nouvelle valeur
-        self.registre.append(code)
 
         # Décalage du registre
-        self.registre[0] = self.registre[1]
-        self.registre[1] = self.registre[2]
-        self.registre[2] = self.registre[3]
-
-        # Suppresion de la valeur
-        del self.registre[3]
+        self.registre[2] = self.registre[1]
+        self.registre[1] = self.registre[0]
+        self.registre[0] = code
 
         return self.registre
 
@@ -61,5 +56,4 @@ class CodeConvolutif(object):
         for bit in code:
             self.decalage(int(bit))
             retour = retour + self.combinaison()
-
         return retour

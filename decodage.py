@@ -23,6 +23,8 @@ class Noeud(object):
     """ Objet noeud qui compose le treillis pour le décodage"""
     def __init__(self, str_type_noeud):
         self.type_noeud = str_type_noeud
+        self.parent_haut = None
+        self.parent_bas = None
         self.haut = None
         self.bas = None
         self.distance = 0
@@ -90,9 +92,9 @@ class DecodeConvolutif(object):
 
     def decoupage(self, str_code):
         """ Fonction de découpage en groupe de deux bits du code reçu"""
-        listtest = [0, 2, 4, 6, 8, 10]
+        listtest = [0, 4, 8, 12, 16]
         for i in listtest:
-            self.liste_code.append(str_code[i:i+2])
+            self.liste_code.append(str_code[i:i+4])
 
     def treillis(self):
         """ Fonction de création du treillis de décodage """
@@ -100,46 +102,20 @@ class DecodeConvolutif(object):
         self.noeud_suivant(self.liste_noeuds[0], 0, 0)
 
         # i = 1
-        self.noeud_suivant(self.liste_noeuds[1], 1, 1)
-
-        self.noeud_suivant(self.liste_noeuds[2], 1, 2)
+        for i in range(1, 3):
+            self.noeud_suivant(self.liste_noeuds[i], 1, i)
 
         # i = 2
-
-        self.noeud_suivant(self.liste_noeuds[3], 2, 3)
-
-        self.noeud_suivant(self.liste_noeuds[4], 2, 4)
-
-        self.noeud_suivant(self.liste_noeuds[5], 2, 5)
-
-        self.noeud_suivant(self.liste_noeuds[6], 2, 6)
+        for i in range(3, 7):
+            self.noeud_suivant(self.liste_noeuds[i], 2, i)
 
         # i = 3
-        self.noeud_suivant(self.liste_noeuds[7], 3, 7)
-
-        self.noeud_suivant(self.liste_noeuds[8], 3, 8)
-
-        self.noeud_suivant(self.liste_noeuds[9], 3, 9)
-
-        self.noeud_suivant(self.liste_noeuds[10], 3, 10)
+        for i in range(7, 11):
+            self.noeud_avant_dernier(self.liste_noeuds[i], 3, i)
 
         # i = 4
-        self.noeud_suivant(self.liste_noeuds[11], 4, 11)
-
-        self.noeud_suivant(self.liste_noeuds[12], 4, 12)
-
-        self.noeud_suivant(self.liste_noeuds[13], 4, 13)
-
-        self.noeud_suivant(self.liste_noeuds[14], 4, 14)
-
-        # i = 5
-        self.noeud_suivant(self.liste_noeuds[15], 5, 15)
-
-        self.noeud_suivant(self.liste_noeuds[16], 5, 16)
-
-        self.noeud_suivant(self.liste_noeuds[17], 5, 17)
-
-        self.noeud_suivant(self.liste_noeuds[18], 5, 18)
+        for i in range(11, 13):
+            self.noeud_dernier(self.liste_noeuds[i], 4, i)
 
     def noeud_suivant(self, add_noeud, i, j):
         """ Fonction de création des noeuds en fonction de leur type (a, b, c, d)"""
@@ -149,7 +125,7 @@ class DecodeConvolutif(object):
             branche_haut = Noeud(str_type_noeud="a")
 
             # Distance par rapport au code reçu
-            distance_temp_haut = distance_hamming(self.liste_code[i], "00")
+            distance_temp_haut = distance_hamming(self.liste_code[i], "0000")
 
             # Ajout de la distance du noeud précédent
             distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
@@ -162,10 +138,10 @@ class DecodeConvolutif(object):
 
             #=======================================================================
             # Création du Noeud c
-            branche_bas = Noeud(str_type_noeud="c")
+            branche_bas = Noeud(str_type_noeud="b")
 
             # Distance par rapport au code reçu
-            distance_temp_bas = distance_hamming(self.liste_code[i], "11")
+            distance_temp_bas = distance_hamming(self.liste_code[i], "0111")
 
             # Ajout de la distance du noeud précédent
             distance_temp_bas = distance_temp_bas + add_noeud.get_distance()
@@ -187,11 +163,52 @@ class DecodeConvolutif(object):
 
         elif add_noeud.get_type_noeud() == "b":
             #=======================================================================
+            # Création du Noeud a
+            branche_haut = Noeud(str_type_noeud="c")
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "1011")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            branche_haut.set_distance(distance_temp_haut)
+
+            # Ajout du code précédent au code actuelle
+            code_temp_haut = add_noeud.get_code()
+            code_temp_haut = code_temp_haut + "0"
+            branche_haut.set_code(code_temp_haut)
+
+            #=======================================================================
+            # Création du Noeud c
+            branche_bas = Noeud(str_type_noeud="d")
+
+            # Distance par rapport au code reçu
+            distance_temp_bas = distance_hamming(self.liste_code[i], "1100")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_bas = distance_temp_bas + add_noeud.get_distance()
+            branche_bas.set_distance(distance_temp_bas)
+
+            # Ajout du code précédent au code actuelle
+            code_temp_bas = add_noeud.get_code()
+            code_temp_bas = code_temp_bas + "1"
+            branche_bas.set_code(code_temp_bas)
+
+            #=======================================================================
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+            add_noeud.set_bas(branche_bas)
+
+            # Ajout à la liste :
+            self.liste_noeuds.append(branche_haut)
+            self.liste_noeuds.append(branche_bas)
+
+        elif add_noeud.get_type_noeud() == "c":
             # Adresse de la branche A précédament crée
             branche_haut = self.liste_noeuds[j+2]
 
             # Distance par rapport au code reçu
-            distance_temp_haut = distance_hamming(self.liste_code[i], "11")
+            distance_temp_haut = distance_hamming(self.liste_code[i], "1101")
 
             # Ajout de la distance du noeud précédent
             distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
@@ -214,7 +231,7 @@ class DecodeConvolutif(object):
             branche_bas = self.liste_noeuds[j+3]
 
             # Distance par rapport au code reçu
-            distance_temp_bas = distance_hamming(self.liste_code[i], "00")
+            distance_temp_bas = distance_hamming(self.liste_code[i], "1010")
 
             # Ajout de la distance du noeud précédent
             distance_temp_bas = distance_temp_bas + add_noeud.get_distance()
@@ -237,55 +254,13 @@ class DecodeConvolutif(object):
             add_noeud.set_haut(branche_haut)
             add_noeud.set_bas(branche_bas)
 
-        elif add_noeud.get_type_noeud() == "c":
-            #=======================================================================
-            # Création du Noeud b
-            branche_haut = Noeud(str_type_noeud="b")
-
-            # Distance par rapport au code reçu
-            distance_temp_haut = distance_hamming(self.liste_code[i], "10")
-
-            # Ajout de la distance du noeud précédent
-            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
-            branche_haut.set_distance(distance_temp_haut)
-
-            # Ajout du code précédent au code actuelle
-            code_temp_haut = add_noeud.get_code()
-            code_temp_haut = code_temp_haut + "0"
-            branche_haut.set_code(code_temp_haut)
-
-            #=======================================================================
-            # Création du Noeud d
-            branche_bas = Noeud(str_type_noeud="d")
-
-            # Distance par rapport au code reçu
-            distance_temp_bas = distance_hamming(self.liste_code[i], "01")
-
-            # Ajout de la distance du noeud précédent
-            distance_temp_bas = distance_temp_bas + add_noeud.get_distance()
-            branche_bas.set_distance(distance_temp_bas)
-
-            # Ajout du code précédent au code actuelle
-            code_temp_bas = add_noeud.get_code()
-            code_temp_bas = code_temp_bas + "1"
-            branche_bas.set_code(code_temp_bas)
-
-            #=======================================================================
-            # Ajout au Noeud précédent :
-            add_noeud.set_haut(branche_haut)
-            add_noeud.set_bas(branche_bas)
-
-            # Ajout à la liste :
-            self.liste_noeuds.append(branche_haut)
-            self.liste_noeuds.append(branche_bas)
-
         elif add_noeud.get_type_noeud() == "d":
             #=======================================================================
             # Adresse de la branche B précédament crée
             branche_haut = self.liste_noeuds[j+3]
 
             # Distance par rapport au code reçu
-            distance_temp_haut = distance_hamming(self.liste_code[i], "01")
+            distance_temp_haut = distance_hamming(self.liste_code[i], "0110")
 
             # Ajout de la distance du noeud précédent
             distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
@@ -308,7 +283,7 @@ class DecodeConvolutif(object):
             branche_bas = self.liste_noeuds[j+4]
 
             # Distance par rapport au code reçu
-            distance_temp_bas = distance_hamming(self.liste_code[i], "10")
+            distance_temp_bas = distance_hamming(self.liste_code[i], "0001")
 
             # Ajout de la distance du noeud précédent
             distance_temp_bas = distance_temp_bas + add_noeud.get_distance()
@@ -331,40 +306,174 @@ class DecodeConvolutif(object):
             add_noeud.set_haut(branche_haut)
             add_noeud.set_bas(branche_bas)
 
+    def noeud_avant_dernier(self, add_noeud, i, j):
+        """ Fonction de création des noeuds en fonction de leur type (a, b, c, d)"""
+        if add_noeud.get_type_noeud() == "a":
+            #=======================================================================
+            # Création du Noeud a
+            branche_haut = Noeud(str_type_noeud="a")
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "0000")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            branche_haut.set_distance(distance_temp_haut)
+
+            # Ajout du code précédent au code actuelle
+            code_temp_haut = add_noeud.get_code()
+            code_temp_haut = code_temp_haut + "0"
+            branche_haut.set_code(code_temp_haut)
+
+            # Ajout à la liste :
+            self.liste_noeuds.append(branche_haut)
+
+        elif add_noeud.get_type_noeud() == "b":
+            #=======================================================================
+            # Création du Noeud c
+            branche_haut = Noeud(str_type_noeud="c")
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "1011")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            branche_haut.set_distance(distance_temp_haut)
+
+            # Ajout du code précédent au code actuelle
+            code_temp_haut = add_noeud.get_code()
+            code_temp_haut = code_temp_haut + "0"
+            branche_haut.set_code(code_temp_haut)
+
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+
+            # Ajout à la liste :
+            self.liste_noeuds.append(branche_haut)
+
+        elif add_noeud.get_type_noeud() == "c":
+            # Adresse de la branche A précédament crée
+            branche_haut = self.liste_noeuds[j+2]
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "1101")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            # Comparaison de la distance calculée et la distance actuelle
+            # Récupération de la distance actuelle de a
+            distance_a = branche_haut.get_distance()
+
+            if distance_a > distance_temp_haut:
+                # On modifie la distance
+                branche_haut.set_distance(distance_temp_haut)
+                # On modifie le code
+                code_temp_haut = add_noeud.get_code()
+                code_temp_haut = code_temp_haut + "0"
+                branche_haut.set_code(code_temp_haut)
+
+            #=======================================================================
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+
+        elif add_noeud.get_type_noeud() == "d":
+            #=======================================================================
+            # Adresse de la branche B précédament crée
+            branche_haut = self.liste_noeuds[j+2]
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "0110")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            # Comparaison de la distance calculée et la distance actuelle
+            # Récupération de la distance actuelle de a
+            distance_a = branche_haut.get_distance()
+
+            if distance_a > distance_temp_haut:
+                # On modifie la distance
+                branche_haut.set_distance(distance_temp_haut)
+                # On modifie le code
+                code_temp_haut = add_noeud.get_code()
+                code_temp_haut = code_temp_haut + "0"
+                branche_haut.set_code(code_temp_haut)
+
+            # Dans le cas contraire on ne fait rien
+
+            #=======================================================================
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+
+    def noeud_dernier(self, add_noeud, i, j):
+        """ Fonction de création des noeuds en fonction de leur type (a, b, c, d)"""
+        if add_noeud.get_type_noeud() == "a":
+            #=======================================================================
+            # Création du Noeud a
+            branche_haut = Noeud(str_type_noeud="a")
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "0000")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            branche_haut.set_distance(distance_temp_haut)
+
+            # Ajout du code précédent au code actuelle
+            code_temp_haut = add_noeud.get_code()
+            code_temp_haut = code_temp_haut + "0"
+            branche_haut.set_code(code_temp_haut)
+
+            #=======================================================================
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+
+            # Ajout à la liste :
+            self.liste_noeuds.append(branche_haut)
+
+        elif add_noeud.get_type_noeud() == "c":
+            # Adresse de la branche A précédament crée
+            branche_haut = self.liste_noeuds[j+1]
+
+            # Distance par rapport au code reçu
+            distance_temp_haut = distance_hamming(self.liste_code[i], "1101")
+
+            # Ajout de la distance du noeud précédent
+            distance_temp_haut = distance_temp_haut + add_noeud.get_distance()
+            # Comparaison de la distance calculée et la distance actuelle
+            # Récupération de la distance actuelle de a
+            distance_a = branche_haut.get_distance()
+
+            if distance_a > distance_temp_haut:
+                # On modifie la distance
+                branche_haut.set_distance(distance_temp_haut)
+                # On modifie le code
+                code_temp_haut = add_noeud.get_code()
+                code_temp_haut = code_temp_haut + "0"
+                branche_haut.set_code(code_temp_haut)
+
+            # Dans le cas contraire on ne fait rien
+
+            # Ajout au Noeud précédent :
+            add_noeud.set_haut(branche_haut)
+
     def debug(self):
         """ Fonction de visualisation de l'ensemble des noeuds """
+        print "========================================================"
         for itt in self.liste_noeuds:
             print
             print itt
             print itt.get_info()
-
-
-
-
+        print "========================================================"
 
 
     def comparaison(self):
         """ Fonction de comparaison des feuilles retourne le code décodé """
         # On récupère les feuilles du treillis
-        list_temp = self.liste_noeuds[-4:]
-        list_resultats = []
-
-        # Supprimer de toute la list les code qui ne finisent pas par "00"
-        for i in range(4):
-            code = list_temp[i].get_code()
-            code = code[-2:]
-            if code == "00":
-                list_resultats.append(list_temp[i])
-
-        del list_temp
-
-        # Test de la longueur du tableau des résultats
-        if len(list_resultats) == 1:
-            lecode = list_resultats[0].get_code()
-            lecode = lecode[:-2]
-            return lecode
-        else:
-            pass
+        dernier_noeud = self.liste_noeuds[-1]
+        print dernier_noeud.get_code()
+        resultat = dernier_noeud.get_code()
+        resultat = resultat[:3]
+        return resultat
 
 
     def decodage(self, str_code):
@@ -372,6 +481,7 @@ class DecodeConvolutif(object):
 
         self.decoupage(str_code)
         self.treillis()
+        #self.debug()
         retour = self.comparaison()
         return retour
 
@@ -392,7 +502,7 @@ def distance_hamming(str_code_a, str_code_b):
     # On compte le nombre de différences entre chaque case
     cpt = 0
 
-    for i in range(2):
+    for i in range(4):
         if list_a[i] != list_b[i]:
             cpt = cpt + 1
 
