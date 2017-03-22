@@ -3,12 +3,10 @@
 """
 ################################################################################
 ###
-###     Programme : Liaison série RS232 avec code correcteur d'erreur
+###     Programme : constant.py
 ###
-###     Description : Implémentation d'un code correcteur d'erreur pour une
-###                   liaison série capable de corriger deux erreurs par octets
-###
-###     Notes : ///////
+###     Description : Fichier qui contient les valeurs attendues de codage/
+###     décodage pour les tests unitaires
 ###
 ###     Auteurs : Toladar
 ###               gregdub

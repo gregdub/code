@@ -1,15 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 """
 ################################################################################
 ###
-###     Programme : Liaison série RS232 avec code correcteur d'erreur
+###     Programme : codage.py
 ###
-###     Description : Implémentation d'un code correcteur d'erreur pour une
-###                   liaison série capable de corriger deux erreurs par octets
+###     Description : Programme de codage pour code convolutif
+###     Rendement                   1/4
+###     Longueur de contrainte      3
+###     Distance libre              9
+###     Pouvoir correcteur          4
 ###
-###     Notes : ///////
+###     Notes : Méthode d'intégration au Programme
+###     import codage
+###     code = codage.CodeConvolutif().codage(le_code_en_str)
 ###
 ###     Auteurs : Toladar
 ###               gregdub
@@ -37,8 +41,6 @@ class CodeConvolutif(object):
 
     def decalage(self, code):
         """ Fonction de décalage du registre """
-
-        # Décalage du registre
         self.registre[2] = self.registre[1]
         self.registre[1] = self.registre[0]
         self.registre[0] = code
@@ -47,10 +49,9 @@ class CodeConvolutif(object):
 
     def codage(self, code):
         """ Fonction de codage """
-        #Ajout de la réinitialisation au code
+
         code = code + "00"
 
-        #Variable codé avec le code code convolutif
         retour = ""
 
         for bit in code:
