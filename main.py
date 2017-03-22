@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+# -*- coding:  mbcs -*-
 
 """
 ################################################################################
@@ -21,12 +21,12 @@
 
 # Module python :
 import wx # Module pour l'affichage de la fenètre
-#import codage # Module pour l'encodage des bits
-#import time
+import codage # Module pour l'encodage des bits
+import decodage # Module pour le decodage des bits
 import serial
 import serial.tools.list_ports
-
-
+from serial import SerialException
+import time
 
 class MainFrame(wx.Frame):
     """Class de la fenêtre principal"""
@@ -44,6 +44,8 @@ class MainFrame(wx.Frame):
 
         font = wx.SystemSettings_GetFont(wx.SYS_SYSTEM_FONT)
         font.SetPointSize(10)
+
+        wx.StaticText(self.panel,-1," Transmission série avec correction de 2 erreurs/octet - Copyright Blochet Bastien et Dubois Grégoire",(1,550))
         
         wx.StaticBox(self.panel,1," Configuration du port d'emission: ",(10,10),size=(300,100))
 
@@ -67,16 +69,16 @@ class MainFrame(wx.Frame):
         self.BoutonTest.SetBackgroundColour(wx.RED)
         self.Bind(wx.EVT_BUTTON, self.TestCom, self.BoutonTest)
 
-        # configure the serial connections
+        # configure the transmission serial connection
         if self.combo1.GetValue() != 'COMx':
-            ser = serial.Serial(
+            serTrans = serial.Serial(
             port=self.combo1.GetValue(),
             baudrate=self.combo2.GetValue(),
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS
             )
-            ser.isOpen()
+            serTrans.isOpen()
      
     # ***** PARTIE RECEPTION *****
           
@@ -87,20 +89,21 @@ class MainFrame(wx.Frame):
         ListPort2 = ['COMx','COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9','COM10']
         self.combo3=wx.ComboBox(self.panel,-1,value=ListPort2[0],choices=ListPort2,size=(80,26),pos=(450,30))
 
-        # Vitesse de transmission
+        # Vitesse de reception
         wx.StaticText(self.panel,-1,"Vitesse :",(370,50))
         ListVitesse2 = ['2400','4800','9600','19200','38400','56000','64000']
         self.combo4=wx.ComboBox(self.panel,-1,value=ListVitesse2[6],choices=ListVitesse2,size=(80,26),pos=(450,50))
 
-        """if self.combo3.GetValue() != 'COMx':
-            ser = serial.Serial(
-            port=self.combo3.GetValue(),
-            baudrate=self.combo4.GetValue(),
-            parity=serial.PARITY_EVEN,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS
-            )
-            ser.isOpen()"""
+##        if self.combo3.GetValue() != 'COMx':
+##            if self.combo3.GetValue() != self.combo1.GetValue():
+##                serRecep = serial.Serial(
+##                port=self.combo3.GetValue(),
+##                baudrate=self.combo4.GetValue(),
+##                parity=serial.PARITY_EVEN,
+##                stopbits=serial.STOPBITS_ONE,
+##                bytesize=serial.EIGHTBITS
+##                )
+##                serRecep.isOpen()
 
     # ***** PARTIE SAISIE TEXTE *****
 
@@ -111,14 +114,14 @@ class MainFrame(wx.Frame):
         vbox.AddSpacer(120)
 
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        st1 = wx.StaticText(self.panel, label='Saisie de la phrase :')
+        st1 = wx.StaticText(self.panel, label=' Saisie de la phrase :')
         hbox1.Add(st1)
         vbox.Add(hbox1, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox10 = wx.BoxSizer(wx.HORIZONTAL)
-        self.saisie = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        self.saisie = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
         hbox10.Add(self.saisie,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox10) 
         self.saisie.Bind(wx.EVT_TEXT_ENTER,self.SaisiePhrase)
@@ -129,90 +132,137 @@ class MainFrame(wx.Frame):
     # ***** PARTIE MODIFICATION DU TEXTE *****
 
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        st2 = wx.StaticText(self.panel, label='Code a envoyer :')
+        st2 = wx.StaticText(self.panel, label=' Code a envoyer :')
         hbox2.Add(st2)
         vbox.Add(hbox2, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        self.saisieModif = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
+        self.saisieModif = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
         hbox3.Add(self.saisieModif,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
         vbox.Add(hbox3) 
         self.saisieModif.Bind(wx.EVT_TEXT_ENTER,self.SaisieModification)
 
-        #vbox.Add((-1, 25))
+        vbox.Add((-1, 50))
     
     
     # ***** RECEPTION DU CODE *****
 
         hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-        st3 = wx.StaticText(self.panel, label='Code recu :')
+        st3 = wx.StaticText(self.panel, label=' Code recu decode :')
         hbox4.Add(st3)
         vbox.Add(hbox4, flag=wx.LEFT | wx.TOP)
 
         #vbox.Add((-1, 10))
 
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        self.t3 = wx.TextCtrl(self.panel, size = (600,100), style=wx.TE_MULTILINE)
-        hbox5.Add(self.t3,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
-        vbox.Add(hbox5) 
+        self.coderecu = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
+        hbox5.Add(self.coderecu,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        vbox.Add(hbox5)
 
+        hbox6 = wx.BoxSizer(wx.HORIZONTAL)
+        st4 = wx.StaticText(self.panel, label=' Retranscription de la phrase :')
+        hbox6.Add(st4)
+        vbox.Add(hbox6, flag=wx.LEFT | wx.TOP)
+
+        #vbox.Add((-1, 10))
+
+        hbox7 = wx.BoxSizer(wx.HORIZONTAL)
+        self.phrasedecode = wx.TextCtrl(self.panel, size = (600,50), style=wx.TE_MULTILINE)
+        hbox7.Add(self.phrasedecode,1,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL,5) 
+        vbox.Add(hbox7) 
 
         # a mettre pour la répartition des zones de texte sur l'ecran
         self.panel.SetSizer(vbox)
 
-
         # Boutton pour la transmission
-        BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(700,500),size=(80,30))
+        BoutonTransmit=wx.Button(self.panel,label="Envoi",pos=(650,235),size=(80,30))
         self.Bind(wx.EVT_BUTTON, self.Transmit, BoutonTransmit)
+
+        # Boutton pour tout effacer
+        BoutonClear=wx.Button(self.panel,label="Clear all",pos=(650,400),size=(80,30))
+        self.Bind(wx.EVT_BUTTON, self.Clear, BoutonClear)
+
 
     # ***** FONCTIONS *****
     
     def TestCom(self,event):
         #self.Close(True)
-        ser = serial.Serial('COM3', 19200, timeout=1)
+        #ser = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        try:
+            ser = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        except SerialException:
+            self.BoutonTest.SetBackgroundColour(wx.RED)
+            msg = """ port COM inexistant """
+            wx.MessageBox(msg)
+            return None
         chaine="test"
-        envoi=ser.write(chaine)    # Envoi de la chaine de caracteres
-        lecture=ser.readline()    # Lecture du port jusqu'au \n (retour ligne)
+        envoi=ser.write(chaine)     # Envoi de la chaine de caracteres
+        lecture=ser.readline()      # Lecture du port jusqu'au \n (retour ligne)
         if (chaine==lecture):
-            #print(out)
             self.BoutonTest.SetBackgroundColour(wx.GREEN)
         else:
             self.BoutonTest.SetBackgroundColour(wx.RED)
 
     def SaisiePhrase(self,event): 
-        #print "Enter pressed"
-        # conversion de la phrase en binaire et envoi à codage (variable code) par morceaux de 4 bits
-        #print(bin(reduce(lambda x, y: 256*x+y, (ord(c) for c in self.saisie), 0)))
-        #self.saisieModif.SetLabel(SaisieConvBin)
-        #self.saisieModif.SetLabel(SaisieConvBin.GetValue())
-
-        #ser.write(bytes(b'your_commands'))
+        self.saisieModif.SetLabel('')
+        # conversion de la phrase en binaire :
+        codepage1252 = self.saisie.GetValue().encode('cp1252')
+        #print(codepage1252)
+        hexstring =codepage1252.encode('hex')
+        #print(hexstring)
+        binary = bin(int('1'+hexstring, 16))[3:]
+        #print(binary)
         
-        a = wx.App(redirect=False)
-        my_str = wx.GetTextFromUser("Enter A Number!")
-        base = {'x':16,'b':2,'o':8}.get(my_str[1].lower(),10)
-        int_val = int(my_str,base)
-        hex_str = hex(int_val)   
-        bin_str = bin(int_val)
+        #fonction codage:
+        motcode = codage.CodeConvolutif().codage(binary)
 
-        msg = """
-        User Entered:%s
-        Int:%s
-        Hex:%s
-        Bin:%s"""%(my_str,int_val,hex_str,bin_str)
-        wx.MessageBox(msg)
+        #affichage de la phrase codee
+        self.saisieModif.SetLabel(motcode)
+        
+
 
     # ***** Fonction ENVOI DU CODE *****
     # par appui sur Enter ou bouton
     def SaisieModification(self,event): 
-        print "Enter pressed"
+        self.coderecu.SetLabel('')
+        start_time = time.time()
+        #envoi sur la liaison serie
+        serTrans = serial.Serial(self.combo1.GetValue(), self.combo2.GetValue(), timeout=1)
+        envoicode=serTrans.write(bytes(self.saisieModif.GetValue()))
+        
+        #reception sur la liaison serie
+        if self.combo3.GetValue() != 'COMx':
+            serRecep = serial.Serial(self.combo3.GetValue(), self.combo4.GetValue(), timeout=1)
+            lecturecode=serRecep.readline()
+        else:
+            lecturecode=serTrans.readline()
+
+        #fonction decodage
+        motdecode = decodage.DecodeConvolutif().decodage(lecturecode)
+            
+        self.coderecu.SetLabel(motdecode)
+
+        #décodage coderecu en phrase
+        mystring = self.coderecu.GetValue().decode('cp1252')
+        self.phrasedecode.SetLabel(mystring)
+
+        wx.StaticText(self.panel,-1," Executed in : %s second(s)" % (time.time() - start_time),(1,530))
+        
 
     def Transmit(self,event): 
-        print "Enter pressed"
+        #execute la meme fonction que SaisieModification
+        self.SaisieModification(event)
 
-        
+    def Clear(self,event):
+        self.saisie.SetLabel('')
+        self.saisieModif.SetLabel('')
+        self.coderecu.SetLabel('')
+        self.phrasedecode.SetLabel('')  
+
+
+
 """
     def OnFerme(self, event):
         Lors de la fermeture de la fenêtre
