@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding:  utf-8 -*-
+# -*- coding:  mbcs -*-
 """
 ################################################################################
 ###
@@ -18,10 +18,12 @@
 
 # Module python :
 import time
+from math import *
 import wx # Module pour l'affichage de la fenètre
 import serial
 import serial.tools.list_ports
 from serial import SerialException
+import binascii
 import codage # Module pour l'encodage des bits
 import decodage # Module pour le decodage des bits
 
@@ -52,7 +54,7 @@ class MainFrame(wx.Frame):
         list_port = ['COMx', 'COM1', 'COM2', 'COM3', 'COM4',
                      'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
                      'COM10']
-        self.combo1 = wx.ComboBox(self.panel, -1, value=list_port[0],
+        self.combo1 = wx.ComboBox(self.panel, -1, value=list_port[3],
                                   choices=list_port, size=(80, 26), pos=(100, 30))
 
         # Vitesse de transmission
@@ -189,18 +191,43 @@ class MainFrame(wx.Frame):
         """ TODO """
         self.saisie_modif.SetLabel('')
         # conversion de la phrase en binaire :
-        codepage1252 = self.saisie.GetValue().encode('cp1252')
+        codepage1252 = self.saisie.GetValue()
+        
+        liste=list(codepage1252)
+        taille=len(liste)
+        ajout = 3-(taille %3)        
+        if ajout != 0:
+            for i in range(0,ajout):
+                liste.append(" ")
+                
+        codepage1252 = "".join(liste)
+        
+        codepage1252 = codepage1252.encode('cp1252')       
+        
+
         #print(codepage1252)
         hexstring = codepage1252.encode('hex')
         #print(hexstring)
         binary = bin(int('1' + hexstring, 16))[3:]
         #print(binary)
 
-        #fonction codage:
-        motcode = codage.CodeConvolutif().codage(binary)
+        longueurenvoi=len(binary)
+        code3=[]
+            
+        for i in range(0,longueurenvoi/3):
+            code3.append(binary[i*3:(i*3)+3])
+            
+        for i in range(0,len(code3)):
+            motcode = codage.CodeConvolutif().codage(code3[i])
+            #print motcode
+            #affichage de la phrase codee
+            currentcode = self.saisie_modif.GetValue()
+            self.saisie_modif.SetLabel(currentcode + motcode)
 
-        #affichage de la phrase codee
-        self.saisie_modif.SetLabel(motcode)
+        var = self.saisie_modif.GetValue()
+        nb_sep = 8
+        b = " ".join([var[i:i+nb_sep] for i in range(0,len(var),nb_sep)])
+        self.saisie_modif.SetLabel(b)
 
     def saisie_modification(self, event):
         """ Fonction d'envoi du code par appui sur le bouton ou la
@@ -219,14 +246,22 @@ class MainFrame(wx.Frame):
             lecturecode = ser_trans.readline()
 
         #fonction decodage
-        motdecode = decodage.DecodeConvolutif().decodage(lecturecode)
+        lecturecode=str(lecturecode)
+        lecturecode = lecturecode.replace(' ','')
+        longueur=len(lecturecode)
+        listcode=[]
+        
+        for i in range(0,longueur/20):
+            listcode.append(lecturecode[i*20:(i*20)+20])
 
-        self.coderecu.SetLabel(motdecode)
+        for i in range(0,len(listcode)):
+            motdecode = decodage.DecodeConvolutif().decodage(listcode[i])
+            current = self.coderecu.GetValue()
+            self.coderecu.SetLabel(current + motdecode)
 
-        #décodage coderecu en phrase
-        mystring = self.coderecu.GetValue().decode('cp1252')
+        mystring = binascii.unhexlify('%x' % int('0b' + self.coderecu.GetValue(), 2))
         self.phrasedecode.SetLabel(mystring)
-
+                                      
         wx.StaticText(self.panel, -1,
                       " Executed in : %s second(s)" % (time.time() - start_time), (1, 530))
 
